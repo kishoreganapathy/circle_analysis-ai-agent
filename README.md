@@ -1,252 +1,197 @@
-# 🔶 Circle-to-Analyze AI Agent
+1. Project Overview
 
-A desktop application similar to Google Gemini's Circle-to-Search feature. Draw a circle around any area on your screen, and the AI will analyze it using TensorFlow, OCR, and code detection.
+The application allows users to draw a free-form circle (or any selection shape) over any part of the screen. Once the user confirms the selection, the app:
 
-## ✨ Features
+Captures the selected region as an image.
 
-- **Global Hotkey**: Press `Ctrl + Shift + O` to activate
-- **Transparent Overlay**: Draw circles on any screen area
-- **AI Analysis**: 
-  - Image classification using TensorFlow MobileNet
-  - OCR text extraction using Tesseract
-  - Code detection and formatting
-  - Object recognition
-- **Interactive Popup**: View results with action buttons:
-  - "What is this?" - General description
-  - "Explain" - Detailed explanation
-  - "Convert to Code" - Code detection and formatting
-  - "Summarize" - Quick summary
-- **Query History**: SQLite database stores all previous queries
+Sends the image to a Python-based AI engine.
 
-## 🛠️ Tech Stack
+Performs multiple types of analysis:
 
-- **Desktop**: Electron.js
-- **Backend**: Node.js + Express.js
-- **AI Engine**: Python (Flask) + TensorFlow + Tesseract OCR
-- **Database**: SQLite (better-sqlite3)
+Image classification (TensorFlow)
 
-## 📋 Prerequisites
+Text recognition (Tesseract OCR)
 
-Before installing, make sure you have:
+Code pattern detection
 
-1. **Node.js** (v16 or higher) - [Download](https://nodejs.org/)
-2. **Python** (v3.8 or higher) - [Download](https://www.python.org/)
-3. **Tesseract OCR** - Required for text extraction
-   - **Windows**: Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki) and add to PATH
-   - **macOS**: `brew install tesseract`
-   - **Linux**: `sudo apt-get install tesseract-ocr`
+Semantic summarization
 
-## 🚀 Installation
+Context extraction
 
-### Step 1: Clone or Download the Project
+Returns the results via the Node.js API.
 
-```bash
-cd PROJECT1
-```
+Displays them inside the Electron-based desktop UI.
 
-### Step 2: Install Node.js Dependencies
+This creates a seamless workflow where the user can visually analyze content from anywhere on their device without opening additional tools.
 
-```bash
-npm install
-```
+2. Architecture and Components
 
-### Step 3: Install Python Dependencies
+The system is built with a modular architecture:
 
-```bash
-cd backend/python
-pip install -r requirements.txt
-cd ../..
-```
+A. Desktop Frontend (Electron)
 
-**Note**: On some systems, you may need to use `pip3` instead of `pip`.
+Renders the transparent overlay for drawing the circle.
 
-### Step 4: Verify Tesseract Installation
+Captures screenshots of the selected region.
 
-```bash
-tesseract --version
-```
+Communicates with the backend using IPC and HTTP requests.
 
-If this command fails, make sure Tesseract is installed and added to your system PATH.
+Displays analysis results in a UI window.
 
-## 🎯 Running the Application
+Runs entirely on the user’s system.
 
-### Option 1: Run Everything Together (Recommended)
+B. Backend Layer (Node.js + Express.js)
 
-```bash
-npm run dev
-```
+Receives image data from the Electron app.
 
-This will:
-1. Start the Node.js backend server (port 3000)
-2. Start the Python AI backend (port 5000)
-3. Wait for both to be ready
-4. Launch the Electron desktop app
+Manages API routing and concurrency.
 
-### Option 2: Run Components Separately
+Sends data to the Python AI service.
 
-**Terminal 1 - Node.js Backend:**
-```bash
-npm run backend
-```
+Stores past query results in SQLite.
 
-**Terminal 2 - Python AI Backend:**
-```bash
-npm run python
-```
+Handles session logging, caching, and error management.
 
-**Terminal 3 - Electron App:**
-```bash
-npm start
-```
+C. Python AI Engine
 
-## 📖 Usage
+A separate Python process performs all heavy AI tasks to keep the Node.js layer fast and responsive. It includes:
 
-1. **Start the application** using one of the methods above
-2. **Press `Ctrl + Shift + O`** (or `Cmd + Shift + O` on macOS) to open the overlay
-3. **Draw a circle** around the area you want to analyze
-   - Click and drag to draw
-   - Release to capture
-   - Press `ESC` to cancel
-4. **View results** in the popup window
-5. **Click action buttons** to see different analysis views:
-   - **What is this?** - General overview
-   - **Explain** - Detailed explanation
-   - **Convert to Code** - Code detection and formatting
-   - **Summarize** - Quick summary
+TensorFlow models for object detection or general classification.
 
-## 📁 Project Structure
+Tesseract OCR for text extraction from the screenshot.
 
-```
-project/
-├── backend/
-│   ├── server.js              # Node.js Express server
-│   ├── database.js            # SQLite database module
-│   ├── database.sqlite        # SQLite database file (auto-created)
-│   ├── temp/                  # Temporary screenshot storage
-│   ├── routes/                # API routes (if needed)
-│   ├── controllers/           # Controllers (if needed)
-│   └── python/
-│       ├── app.py             # Flask AI backend
-│       ├── call_python.py     # Helper script for Node.js
-│       ├── requirements.txt   # Python dependencies
-│       ├── model/
-│       │   ├── classifier.py  # TensorFlow image classifier
-│       │   ├── ocr_engine.py  # Tesseract OCR engine
-│       │   └── code_detector.py # Code detection logic
-│       └── utils/
-│
-├── desktop/
-│   ├── main.js                # Electron main process
-│   ├── overlay/
-│   │   ├── overlay.html       # Overlay HTML
-│   │   ├── overlay.js        # Circle drawing logic
-│   │   └── overlay.css       # Overlay styles
-│   └── popup/
-│       ├── popup.html        # Results popup HTML
-│       ├── popup.js          # Popup logic
-│       └── popup.css         # Popup styles
-│
-├── package.json               # Node.js dependencies
-└── README.md                  # This file
-```
+Custom logic to detect code snippets (indentation, syntax patterns, keywords).
 
-## 🔧 API Endpoints
+AI reasoning to summarize or explain the extracted result.
 
-### Node.js Backend (Port 3000)
+This separation mirrors real production pipelines where ML inference is isolated for performance and maintainability.
 
-- `GET /health` - Health check
-- `POST /capture` - Capture screenshot
-- `POST /analyze` - Analyze image (forwards to Python)
-- `GET /history` - Get query history
+3. Key Features
+1. Circle-to-Analyze Overlay
 
-### Python Backend (Port 5000)
+A fullscreen transparent overlay allows the user to “circle” any portion of the screen. This automatically:
 
-- `GET /health` - Health check
-- `POST /analyze` - Analyze image with AI
+Identifies the boundaries of the circle
 
-## 🐛 Troubleshooting
+Crops the selected region
 
-### Issue: "Tesseract not found"
+Sends that region for analysis
 
-**Solution**: 
-- Make sure Tesseract is installed
-- Add Tesseract to your system PATH
-- On Windows, the default path is usually `C:\Program Files\Tesseract-OCR`
+This interaction model makes the tool intuitive and fast.
 
-### Issue: "Python backend not responding"
+2. Real-Time OCR and Text Interpretation
 
-**Solution**:
-- Check if Python dependencies are installed: `pip install -r backend/python/requirements.txt`
-- Make sure port 5000 is not in use
-- Check Python version: `python --version` (should be 3.8+)
+Extracted text is processed to:
 
-### Issue: "TensorFlow installation fails"
+Summarize content
 
-**Solution**:
-- Make sure you have Python 3.8-3.11 (TensorFlow 2.15 supports these versions)
-- Try installing TensorFlow separately: `pip install tensorflow==2.15.0`
-- On Apple Silicon Macs, you may need TensorFlow for macOS: `pip install tensorflow-macos`
+Provide relevant explanations
 
-### Issue: "Global hotkey not working"
+Detect URLs and references
 
-**Solution**:
-- Make sure the Electron app has focus
-- Try restarting the application
-- On some systems, you may need to grant accessibility permissions
+Highlight important keywords
 
-### Issue: "Screenshot capture fails"
+This makes it useful for studying, research, reading documents, etc.
 
-**Solution**:
-- Make sure you're running on a supported platform (Windows, macOS, Linux)
-- Check that the overlay window is visible
-- Try drawing a larger circle
+3. Code Detection and Explanation
 
-## 🎓 Learning Resources
+If the selected region contains code, the system:
 
-This project demonstrates:
+Identifies the language
 
-- **Electron.js**: Desktop application development
-- **Global Hotkeys**: System-level keyboard shortcuts
-- **Screen Capture**: Taking screenshots programmatically
-- **Canvas Drawing**: HTML5 canvas for drawing circles
-- **REST APIs**: Express.js and Flask backends
-- **AI/ML**: TensorFlow for image classification
-- **OCR**: Text extraction from images
-- **Database**: SQLite for data persistence
-- **IPC Communication**: Electron inter-process communication
+Explains the logic
 
-## 📝 Notes
+Highlights errors
 
-- The first time you run the app, TensorFlow will download the MobileNet model (~14MB)
-- Screenshots are temporarily stored in `backend/temp/` and can be cleaned up manually
-- Query history is stored in `backend/database.sqlite`
-- The application works best with clear, high-contrast images
+Shows time/space complexity (for algorithms)
 
-## 🔒 Security Notes
+Suggests improvements
 
-- The application captures screenshots of your screen
-- All processing is done locally (no data sent to external servers)
-- Screenshots are stored temporarily and can be deleted from `backend/temp/`
+This is especially useful for debugging or learning.
 
-## 📄 License
+4. Image Recognition
 
-ISC
+Using TensorFlow, the system identifies:
 
-## 🤝 Contributing
+Objects
 
-This is a student-level project. Feel free to:
-- Add more AI models
-- Improve code detection
-- Add more analysis options
-- Enhance the UI/UX
+Scenes
 
-## 🙏 Acknowledgments
+Diagrams
 
-- Inspired by Google Gemini's Circle-to-Search feature
-- Uses TensorFlow MobileNet for image classification
-- Uses Tesseract OCR for text extraction
+Charts
 
----
+UI elements
 
-**Happy Analyzing! 🎉**
+This turns screenshots into context-aware information.
 
+5. Smart AI Interactions
+
+Depending on the content detected, the system tailors its response:
+
+If text → summarize
+
+If code → explain
+
+If image → classify
+
+If diagram → describe
+
+If error message → troubleshoot
+
+6. Local Database (SQLite)
+
+All user queries and responses are stored locally, allowing:
+
+History tracking
+
+Offline access
+
+Faster repeat analyses
+
+4. Why This Project Matters
+
+This project demonstrates practical, full-stack AI engineering skills that companies look for:
+
+1. Multi-language integration
+
+Electron + Node.js + Python in one pipeline.
+
+2. Asynchronous communication
+
+Inter-process communication with streams, buffers, and non-blocking APIs.
+
+3. AI/ML integration
+
+Working with TensorFlow, OCR, and custom analysis logic.
+
+4. System design
+
+Modular architecture similar to real enterprise-level AI tools.
+
+5. Production-level challenges
+
+Handling:
+
+Concurrency
+
+Image processing
+
+Error boundaries
+
+
+What i learned from this project: 
+Building a desktop app from scratch
+
+Designing multi-component systems
+
+Implementing OCR and ML pipelines
+
+Managing inter-process communication
+
+Working with Electron, Node, Express, Python, SQLite
+
+Creating a real-world inspired AI product
+Efficient memory use
+
+Data persistence
